@@ -544,7 +544,6 @@ resources:
         sourcePath: .item.source.path
       relations:
         application: .metadata.uid
-        cluster: .item.cluster
 
 ```
 
