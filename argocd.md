@@ -1,10 +1,40 @@
-# ArgoCD Integration
+import Tabs from "@theme/Tabs"
+import TabItem from "@theme/TabItem"
+import Prerequisites from "/docs/build-your-software-catalog/sync-data-to-catalog/templates/\_ocean_helm_prerequisites_block.mdx"
+import ProjecttBlueprint from '/docs/build-your-software-catalog/custom-integration/webhook/examples/resources/argocd/\_example_project_blueprint.mdx'
+import ApplicationBlueprint from '/docs/build-your-software-catalog/custom-integration/webhook/examples/resources/argocd/\_example_application_blueprint.mdx'
+import EventBlueprint from '/docs/build-your-software-catalog/custom-integration/webhook/examples/resources/argocd/\_example_event_blueprint.mdx'
 
-This document describes the ArgoCD integration with Port.
+import ArgoCDWebhookConfig from '/docs/build-your-software-catalog/custom-integration/webhook/examples/resources/argocd/\_example_webhook_configuration.mdx'
+import ArgoCDEventWebhookConfig from '/docs/build-your-software-catalog/custom-integration/webhook/examples/resources/argocd/\_example_events_webhook_config.mdx'
+import ArgoCDEventManifest from '/docs/build-your-software-catalog/custom-integration/webhook/examples/resources/argocd/\_example_events_manifest.mdx'
+import PortApiRegionTip from "/docs/generalTemplates/_port_region_parameter_explanation_template.md"
+import OceanRealtimeInstallation from "/docs/build-your-software-catalog/sync-data-to-catalog/templates/_ocean_realtime_installation.mdx"
+
+
+# ArgoCD
+
+Port's ArgoCD integration allows you to model ArgoCD resources in your software catalog and ingest data into them.
+
 
 ## Overview
 
-ArgoCD is a declarative, GitOps continuous delivery tool for Kubernetes. This integration syncs ArgoCD applications with Port to provide visibility into your deployment status.
+This integration allows you to:
+
+- Map and organize your desired ArgoCD resources and their metadata in Port (see supported resources below).
+- Watch for ArgoCD object changes (create/update/delete) in real-time, and automatically apply the changes to your software catalog.
+
+### Supported Resources
+
+The resources that can be ingested from ArgoCD into Port are listed below.
+It is possible to reference any field that appears in the API responses linked below in the mapping configuration.
+
+- [`cluster`](https://cd.apps.argoproj.io/swagger-ui#operation/ClusterService_List)
+- [`project`](https://cd.apps.argoproj.io/swagger-ui#operation/ProjectService_List)
+- [`application`](https://cd.apps.argoproj.io/swagger-ui#operation/ApplicationService_List)
+- [`deployment-history`](https://cd.apps.argoproj.io/swagger-ui#operation/ApplicationService_List) 
+- [`kubernetes-resource`](https://cd.apps.argoproj.io/swagger-ui#operation/ApplicationService_List)
+- [`managed-resource`](https://cd.apps.argoproj.io/swagger-ui#operation/ApplicationService_ManagedResources)
 
 ## Prerequisites
 
