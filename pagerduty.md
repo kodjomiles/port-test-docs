@@ -405,6 +405,7 @@ Port integrations use a [YAML mapping block](/build-your-software-catalog/custom
 The mapping makes use of the [JQ JSON processor](https://stedolan.github.io/jq/manual/) to select, modify, concatenate, transform and perform other operations on existing fields and values from the integration API.
 
 ### Default mapping configuration
+<!-- Last updated: b7dd9a9e5e6c443c7311cbb435db7e1fed9451c3-1747498532 -->
 This is the default mapping configuration for the PagerDuty integration.
 
 ```yaml showLineNumber
