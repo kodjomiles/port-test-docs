@@ -17,6 +17,49 @@ import OceanRealtimeInstallation from "/docs/build-your-software-catalog/sync-da
 Port's ArgoCD integration allows you to model ArgoCD resources in your software catalog and ingest data into them.
 
 
+## Configuration Mapping
+
+### Default mapping configuration
+This is the default mapping configuration for the integration.
+
+```yaml showLineNumber
+deleteDependentEntities: true
+createMissingRelatedEntities: true
+enableMergeEntity: true
+resources:
+- kind: cluster
+  selector:
+    query: 'true'
+  port:
+    entity:
+      mappings: {}
+- kind: cluster
+  selector:
+    query: 'true'
+  port:
+    entity:
+      mappings:
+        identifier: .name
+        blueprint: '"argocdCluster"'
+- kind: project
+  selector:
+    query: 'true'
+  port:
+    entity:
+      mappings:
+        identifier: .name + "-" + .item | tostring
+        blueprint: '"argocdNamespace"'
+- kind: application
+  selector:
+    query: 'true'
+  port:
+    entity:
+      mappings:
+        identifier: .metadata.name
+        blueprint: '"argocdProject"'
+
+```
+
 ## Overview
 
 This integration allows you to:
