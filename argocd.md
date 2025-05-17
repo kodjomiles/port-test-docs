@@ -14,7 +14,21 @@ ArgoCD is a declarative, GitOps continuous delivery tool for Kubernetes. This in
 
 ## Configuration Mapping
 
-This section will be automatically updated by the GitHub Action when argocd.ts changes.
+// Configuration Mapping
+// The following maps ArgoCD application fields to Port properties:
+// 
+// | ArgoCD Field | Port Property |
+// |-------------|--------------|
+// | metadata.name | identifier |
+// | spec.project | project |
+// | spec.source.repoURL | gitRepository |
+// | spec.source.path | gitPath |
+// | spec.destination.namespace | namespace |
+// | status.health.status | healthStatus |
+// | status.sync.status | syncStatus |
+//
+// Additional configuration can be added as needed.
+
 
 ## Setup Instructions
 
