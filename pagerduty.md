@@ -481,7 +481,8 @@ resources:
           resolvedAt: .resolved_at
           recoveryTime: (.created_at as $createdAt | .resolved_at as $resolvedAt |
             if $resolvedAt == null then null else  ( ($resolvedAt | strptime("%Y-%m-%dT%H:%M:%SZ")
-            | mktime) -\n  ($createdAt | strptime("%Y-%m-%dT%H:%M:%SZ") | mktime)
+            | mktime) -
+  ($createdAt | strptime("%Y-%m-%dT%H:%M:%SZ") | mktime)
             ) / 60 | floor end)
           triggered_by: .first_trigger_log_entry.agent.summary
         relations:
