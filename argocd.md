@@ -455,96 +455,43 @@ The mapping makes use of the [JQ JSON processor](https://stedolan.github.io/jq/m
 This is the default mapping configuration for the ArgoCD integration.
 
 ```yaml showLineNumber
-deleteDependentEntities: true
-createMissingRelatedEntities: true
-enableMergeEntity: true
 resources:
-- kind: cluster
-  selector:
-    query: 'true'
-  port:
-    entity:
-      mappings:
-        identifier: .name
-        title: .name
-        blueprint: '"argocdCluster"'
-        properties:
-          applicationsCount: .info.applicationsCount
-          serverVersion: .serverVersion
-          labels: .labels
-          updatedAt: .connectionState.attemptedAt
-          server: .server
-- kind: cluster
-  selector:
-    query: 'true'
-  port:
-    entity:
-      mappings:
-        identifier: .name + "-" + .item | tostring
-        title: .name + "-" + .item
-        blueprint: '"argocdNamespace"'
-        relations:
-          cluster: .name
-    itemsToParse: .namespaces
-- kind: project
-  selector:
-    query: 'true'
-  port:
-    entity:
-      mappings:
-        identifier: .metadata.name
-        title: .metadata.name
-        blueprint: '"argocdProject"'
-        properties:
-          createdAt: .metadata.creationTimestamp
-          description: .spec.description
-- kind: application
-  selector:
-    query: 'true'
-  port:
-    entity:
-      mappings:
-        identifier: .metadata.uid
-        title: .metadata.name
-        blueprint: '"argocdApplication"'
-        properties:
-          gitRepo: .spec.source.repoURL
-          gitPath: .spec.source.path
-          destinationServer: .spec.destination.server
-          revision: .status.sync.revision
-          targetRevision: .spec.source.targetRevision
-          syncStatus: .status.sync.status
-          healthStatus: .status.health.status
-          createdAt: .metadata.creationTimestamp
-          labels: .metadata.labels
-          annotations: .metadata.annotations
-        relations:
-          project: .spec.project
-          namespace: .metadata.namespace
-          environment:
-            combinator: '"and"'
-            rules: []
-          cluster:
-            combinator: '"and"'
-            rules: []
-- kind: application
-  selector:
-    query: 'true'
-  port:
-    mappings:
-      identifier: .metadata.uid + "-" + (.item.id | tostring)
-      title: .metadata.name + "-" + (.item.id | tostring)
-      blueprint: '"argocdDeploymentHistory"'
-      properties:
-        deployedAt: .item.deployedAt
-        deployStartedAt: .item.deployStartedAt
-        revision: .item.source.repoURL + "/commit/" + .item.revision
-        initiatedBy: .item.initiatedBy.username
-        repoURL: .item.source.repoURL
-        sourcePath: .item.source.path
-      relations:
-        application: .metadata.uid
-
+- raw_content: "\n\t\t\t\t{\n\t\t\t\t\tkind: 'cluster',\n\t\t\t\t\tselector: {\n\t\
+    \t\t\t\t\tquery: 'true'},\n\t\t\t\t\tport: {\n\t\t\t\t\t\tentity: {\n\t\t\t\t\t\
+    \t\tmappings: {\n\t\t\t\t\t\t\t\tidentifier: '.name',\n\t\t\t\t\t\t\t\ttitle:\
+    \ '.name',\n\t\t\t\t\t\t\t\tblueprint: '\"argocdCluster\"',\n\t\t\t\t\t\t\t\t\
+    properties: {\n\t\t\t\t\t\t\t\t\tapplicationsCount: '.info.applicationsCount',\n\
+    \t\t\t\t\t\t\t\t\tserverVersion: '.serverVersion',\n\t\t\t\t\t\t\t\t\tlabels:\
+    \ '.labels',\n\t\t\t\t\t\t\t\t\tupdatedAt: '.connectionState.attemptedAt',\n\t\
+    \t\t\t\t\t\t\t\tserver: '.server'}}}}},\n\t\t\t\t{\n\t\t\t\t\tkind: 'cluster',\n\
+    \t\t\t\t\tselector: {\n\t\t\t\t\t\tquery: 'true'},\n\t\t\t\t\tport: {\n\t\t\t\t\
+    \t\tentity: {\n\t\t\t\t\t\t\tmappings: {\n\t\t\t\t\t\t\t\tidentifier: '.name +\
+    \ \"-\" + .item | tostring',\n\t\t\t\t\t\t\t\ttitle: '.name + \"-\" + .item',\n\
+    \t\t\t\t\t\t\t\tblueprint: '\"argocdNamespace\"',\n\t\t\t\t\t\t\t\tproperties:\
+    \ {},\n\t\t\t\t\t\t\t\trelations: {\n\t\t\t\t\t\t\t\t\tcluster: '.name'}}},\n\t\
+    \t\t\t\t\titemsToParse: '.namespaces'}},\n\t\t\t\t{\n\t\t\t\t\tkind: 'project',\n\
+    \t\t\t\t\tselector: {\n\t\t\t\t\t\tquery: 'true'},\n\t\t\t\t\tport: {\n\t\t\t\t\
+    \t\tentity: {\n\t\t\t\t\t\t\tmappings: {\n\t\t\t\t\t\t\t\tidentifier: '.metadata.name',\n\
+    \t\t\t\t\t\t\t\ttitle: '.metadata.name',\n\t\t\t\t\t\t\t\tblueprint: '\"argocdProject\"\
+    ',\n\t\t\t\t\t\t\t\tproperties: {\n\t\t\t\t\t\t\t\t\tcreatedAt: '.metadata.creationTimestamp',\n\
+    \t\t\t\t\t\t\t\t\tdescription: '.spec.description'}}}}},\n\t\t\t\t{\n\t\t\t\t\t\
+    kind: 'application',\n\t\t\t\t\tselector: {\n\t\t\t\t\t\tquery: 'true'},\n\t\t\
+    \t\t\tport: {\n\t\t\t\t\t\tentity: {\n\t\t\t\t\t\t\tmappings: {\n\t\t\t\t\t\t\t\
+    \tidentifier: '.metadata.uid',\n\t\t\t\t\t\t\t\ttitle: '.metadata.name',\n\t\t\
+    \t\t\t\t\t\tblueprint: '\"argocdApplication\"',\n\t\t\t\t\t\t\t\tproperties: {\n\
+    \t\t\t\t\t\t\t\t\tgitRepo: '.spec.source.repoURL',\n\t\t\t\t\t\t\t\t\tgitPath:\
+    \ '.spec.source.path',\n\t\t\t\t\t\t\t\t\tdestinationServer: '.spec.destination.server',\n\
+    \t\t\t\t\t\t\t\t\trevision: '.status.sync.revision',\n\t\t\t\t\t\t\t\t\ttargetRevision:\
+    \ '.spec.source.targetRevision',\n\t\t\t\t\t\t\t\t\tsyncStatus: '.status.sync.status',\n\
+    \t\t\t\t\t\t\t\t\thealthStatus: '.status.health.status',\n\t\t\t\t\t\t\t\t\tcreatedAt:\
+    \ '.metadata.creationTimestamp',\n\t\t\t\t\t\t\t\t\tlabels: '.metadata.labels',\n\
+    \t\t\t\t\t\t\t\t\tannotations: '.metadata.annotations'},\n\t\t\t\t\t\t\t\trelations:\
+    \ {\n\t\t\t\t\t\t\t\t\tproject: '.spec.project',\n\t\t\t\t\t\t\t\t\tnamespace:\
+    \ '.metadata.namespace',\n\t\t\t\t\t\t\t\t\tenvironment: {\n\t\t\t\t\t\t\t\t\t\
+    \tcombinator: '\"and\"',\n\t\t\t\t\t\t\t\t\t\trules: [\n\t\t\t\t\t\t\t\t\t\t\t\
+    {\n\t\t\t\t\t\t\t\t\t\t\t\toperator: '\"=\"',\n\t\t\t\t\t\t\t\t\t\t\t\tproperty:\
+    \ '\"argoCluster\"',\n\t\t\t\t\t\t\t\t\t\t\t\tvalue: '.spec.destination.server'},\n\
+    \t\t\t\t\t\t\t\t\t\t"
 ```
 
 
