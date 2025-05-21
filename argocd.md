@@ -455,7 +455,6 @@ The mapping makes use of the [JQ JSON processor](https://stedolan.github.io/jq/m
 This is the default mapping configuration for the ArgoCD integration.
 
 ```yaml showLineNumber
-
 ```
 
 
