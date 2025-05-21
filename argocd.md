@@ -515,6 +515,7 @@ resources:
           revision: .status.sync.revision
           syncStatus: .status.sync.status
           targetRevision: .spec.source.targetRevision
+          test: nothing
         relations:
           cluster:
             combinator: '"and"'

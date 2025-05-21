@@ -408,158 +408,157 @@ The mapping makes use of the [JQ JSON processor](https://stedolan.github.io/jq/m
 This is the default mapping configuration for the PagerDuty integration.
 
 ```yaml showLineNumber
-deleteDependentEntities: true
 createMissingRelatedEntities: true
+deleteDependentEntities: true
 enableMergeEntity: true
 resources:
 - kind: services
-  selector:
-    query: 'true'
   port:
     entity:
       mappings:
-        identifier: .id
-        title: .name
         blueprint: '"pagerdutyService"'
+        identifier: .id
         properties:
-          status: .status
-          url: .html_url
+          escalationLevels: .__oncall_user | map(.escalation_level) | unique | length
+          meanSecondsToEngage: .__analytics.mean_seconds_to_engage
+          meanSecondsToFirstAck: .__analytics.mean_seconds_to_first_ack
+          meanSecondsToResolve: .__analytics.mean_seconds_to_resolve
           oncall: .__oncall_user | sort_by(.escalation_level) | .[0].user.email
           secondaryOncall: .__oncall_user | sort_by(.escalation_level) | .[1].user.email
-          escalationLevels: .__oncall_user | map(.escalation_level) | unique | length
-          meanSecondsToResolve: .__analytics.mean_seconds_to_resolve
-          meanSecondsToFirstAck: .__analytics.mean_seconds_to_first_ack
-          meanSecondsToEngage: .__analytics.mean_seconds_to_engage
-- kind: incidents
+          status: .status
+          url: .html_url
+        title: .name
   selector:
     query: 'true'
-    apiQueryParams:
-      include: []
-      statuses: []
+- kind: incidents
   port:
     entity:
       mappings:
-        identifier: .id | tostring
-        title: .title
         blueprint: '"pagerdutyIncident"'
+        identifier: .id | tostring
         properties:
-          status: .status
-          url: .html_url
-          urgency: .urgency
-          escalation_policy: .escalation_policy.summary
           created_at: .created_at
-          updated_at: .updated_at
-          priority: if .priority != null then .priority.summary else null end
           description: .description
+          escalation_policy: .escalation_policy.summary
+          priority: if .priority != null then .priority.summary else null end
+          status: .status
           triggered_by: .first_trigger_log_entry.agent.summary
+          updated_at: .updated_at
+          urgency: .urgency
+          url: .html_url
         relations:
           pagerdutyService: .service.id
           service:
             combinator: '"and"'
             rules: []
-- kind: incidents
+        title: .title
   selector:
-    query: 'true'
     apiQueryParams:
       include: []
       statuses: []
+    query: 'true'
+- kind: incidents
   port:
     entity:
       mappings:
-        identifier: .id | tostring
-        title: .title
         blueprint: '"pagerdutyIncident"'
+        identifier: .id | tostring
         properties:
-          status: .status
-          url: .html_url
-          urgency: .urgency
-          escalation_policy: .escalation_policy.summary
           created_at: .created_at
-          updated_at: .updated_at
-          priority: if .priority != null then .priority.summary else null end
           description: .description
-          resolvedAt: .resolved_at
+          escalation_policy: .escalation_policy.summary
+          priority: if .priority != null then .priority.summary else null end
           recoveryTime: (.created_at as $createdAt | .resolved_at as $resolvedAt |
             if $resolvedAt == null then null else  ( ($resolvedAt | strptime("%Y-%m-%dT%H:%M:%SZ")
             | mktime) -\n  ($createdAt | strptime("%Y-%m-%dT%H:%M:%SZ") | mktime)
             ) / 60 | floor end)
+          resolvedAt: .resolved_at
+          status: .status
           triggered_by: .first_trigger_log_entry.agent.summary
+          updated_at: .updated_at
+          urgency: .urgency
+          url: .html_url
         relations:
-          pagerdutyService: .service.id
+          incident_pagerduty_assignee: .assignments | map(.assignee.id)
           incident_port_assignee:
             combinator: '"and"'
             rules: []
-          incident_pagerduty_assignee: .assignments | map(.assignee.id)
-- kind: schedules
+          pagerdutyService: .service.id
+        title: .title
   selector:
-    query: 'true'
-  port:
-    entity:
-      mappings:
-        identifier: .id
-        title: .name
-        blueprint: '"pagerdutySchedule"'
-        properties:
-          url: .html_url
-          timezone: .time_zone
-          description: .description
-          users: '[.users[] | select(has("__email")) | .__email]'
-- kind: oncalls
-  selector:
-    query: 'true'
     apiQueryParams:
       include: []
+      statuses: []
+    query: 'true'
+- kind: schedules
   port:
     entity:
       mappings:
-        identifier: .user.id + "-" + .schedule.id + "-" + .start
-        title: .user.name
-        blueprint: '"pagerdutyOncall"'
+        blueprint: '"pagerdutySchedule"'
+        identifier: .id
         properties:
-          startDate: .start
+          description: .description
+          timezone: .time_zone
+          url: .html_url
+          users: '[.users[] | select(has("__email")) | .__email]'
+        title: .name
+  selector:
+    query: 'true'
+- kind: oncalls
+  port:
+    entity:
+      mappings:
+        blueprint: '"pagerdutyOncall"'
+        identifier: .user.id + "-" + .schedule.id + "-" + .start
+        properties:
           endDate: .end
+          startDate: .start
           url: .schedule.html_url
         relations:
-          pagerdutySchedule: .schedule.id
           pagerdutyEscalationPolicy: .escalation_policy.id
+          pagerdutySchedule: .schedule.id
           pagerduty_user: .user.id
           port_user:
             combinator: '"and"'
             rules: []
+        title: .user.name
+  selector:
+    apiQueryParams:
+      include: []
+    query: 'true'
 - kind: escalation_policies
-  selector:
-    query: 'true'
-    attachOncallUsers: true
   port:
     entity:
       mappings:
-        identifier: .id
-        title: .name
         blueprint: '"pagerdutyEscalationPolicy"'
+        identifier: .id
         properties:
-          url: .html_url
-          summary: .summary
-          primaryOncall: .__oncall_users | sort_by(.escalation_level) | .[0].user.email
           escalationRules: .escalation_rules
-- kind: users
+          primaryOncall: .__oncall_users | sort_by(.escalation_level) | .[0].user.email
+          summary: .summary
+          url: .html_url
+        title: .name
   selector:
+    attachOncallUsers: true
     query: 'true'
+- kind: users
   port:
     entity:
       mappings:
-        identifier: .id
-        title: .name
         blueprint: '"pagerdutyUser"'
+        identifier: .id
         properties:
-          url: .html_url
-          time_zone: .time_zone
-          email: .email
-          description: .description
-          role: .role
-          job_title: .job_title
-          teams: .teams
           contact_methods: .contact_methods
-
+          description: .description
+          email: .email
+          job_title: .job_title
+          role: .role
+          teams: .teams
+          time_zone: .time_zone
+          url: .html_url
+        title: .name
+  selector:
+    query: 'true'
 ```
 
 
