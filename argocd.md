@@ -455,96 +455,95 @@ The mapping makes use of the [JQ JSON processor](https://stedolan.github.io/jq/m
 This is the default mapping configuration for the ArgoCD integration.
 
 ```yaml showLineNumber
-deleteDependentEntities: true
 createMissingRelatedEntities: true
+deleteDependentEntities: true
 enableMergeEntity: true
 resources:
 - kind: cluster
-  selector:
-    query: 'true'
   port:
     entity:
       mappings:
-        identifier: .name
-        title: .name
         blueprint: '"argocdCluster"'
+        identifier: .name
         properties:
           applicationsCount: .info.applicationsCount
-          serverVersion: .serverVersion
           labels: .labels
-          updatedAt: .connectionState.attemptedAt
           server: .server
-- kind: cluster
+          serverVersion: .serverVersion
+          updatedAt: .connectionState.attemptedAt
+        title: .name
   selector:
     query: 'true'
+- kind: cluster
   port:
     entity:
       mappings:
-        identifier: .name + "-" + .item | tostring
-        title: .name + "-" + .item
         blueprint: '"argocdNamespace"'
+        identifier: .name + "-" + .item | tostring
         relations:
           cluster: .name
+        title: .name + "-" + .item
     itemsToParse: .namespaces
-- kind: project
   selector:
     query: 'true'
+- kind: project
   port:
     entity:
       mappings:
-        identifier: .metadata.name
-        title: .metadata.name
         blueprint: '"argocdProject"'
+        identifier: .metadata.name
         properties:
           createdAt: .metadata.creationTimestamp
           description: .spec.description
-- kind: application
+        title: .metadata.name
   selector:
     query: 'true'
+- kind: application
   port:
     entity:
       mappings:
-        identifier: .metadata.uid
-        title: .metadata.name
         blueprint: '"argocdApplication"'
+        identifier: .metadata.uid
         properties:
-          gitRepo: .spec.source.repoURL
-          gitPath: .spec.source.path
-          destinationServer: .spec.destination.server
-          revision: .status.sync.revision
-          targetRevision: .spec.source.targetRevision
-          syncStatus: .status.sync.status
-          healthStatus: .status.health.status
-          createdAt: .metadata.creationTimestamp
-          labels: .metadata.labels
           annotations: .metadata.annotations
+          createdAt: .metadata.creationTimestamp
+          destinationServer: .spec.destination.server
+          gitPath: .spec.source.path
+          gitRepo: .spec.source.repoURL
+          healthStatus: .status.health.status
+          labels: .metadata.labels
+          revision: .status.sync.revision
+          syncStatus: .status.sync.status
+          targetRevision: .spec.source.targetRevision
         relations:
-          project: .spec.project
-          namespace: .metadata.namespace
-          environment:
-            combinator: '"and"'
-            rules: []
           cluster:
             combinator: '"and"'
             rules: []
-- kind: application
+          environment:
+            combinator: '"and"'
+            rules: []
+          namespace: .metadata.namespace
+          project: .spec.project
+        title: .metadata.name
   selector:
     query: 'true'
+- kind: application
   port:
     mappings:
-      identifier: .metadata.uid + "-" + (.item.id | tostring)
-      title: .metadata.name + "-" + (.item.id | tostring)
       blueprint: '"argocdDeploymentHistory"'
+      identifier: .metadata.uid + "-" + (.item.id | tostring)
       properties:
-        deployedAt: .item.deployedAt
         deployStartedAt: .item.deployStartedAt
-        revision: .item.source.repoURL + "/commit/" + .item.revision
+        deployedAt: .item.deployedAt
         initiatedBy: .item.initiatedBy.username
         repoURL: .item.source.repoURL
+        revision: .item.source.repoURL + "/commit/" + .item.revision
         sourcePath: .item.source.path
       relations:
         application: .metadata.uid
-
+      title: .metadata.name + "-" + (.item.id | tostring)
+  selector:
+    query: 'true'
 ```
 
 
