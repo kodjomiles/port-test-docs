@@ -455,95 +455,97 @@ The mapping makes use of the [JQ JSON processor](https://stedolan.github.io/jq/m
 This is the default mapping configuration for the ArgoCD integration.
 
 ```yaml showLineNumber
-createMissingRelatedEntities: true
 deleteDependentEntities: true
+createMissingRelatedEntities: true
 enableMergeEntity: true
 resources:
 - kind: cluster
+  selector:
+    query: 'true'
   port:
     entity:
       mappings:
-        blueprint: '"argocdCluster"'
         identifier: .name
+        title: .name
+        blueprint: '"argocdCluster"'
         properties:
           applicationsCount: .info.applicationsCount
-          labels: .labels
-          server: .server
           serverVersion: .serverVersion
+          labels: .labels
           updatedAt: .connectionState.attemptedAt
-        title: .name
+          server: .server
+- kind: cluster
   selector:
     query: 'true'
-- kind: cluster
   port:
     entity:
       mappings:
-        blueprint: '"argocdNamespace"'
         identifier: .name + "-" + .item | tostring
+        title: .name + "-" + .item
+        blueprint: '"argocdNamespace"'
         relations:
           cluster: .name
-        title: .name + "-" + .item
     itemsToParse: .namespaces
+- kind: project
   selector:
     query: 'true'
-- kind: project
   port:
     entity:
       mappings:
-        blueprint: '"argocdProject"'
         identifier: .metadata.name
+        title: .metadata.name
+        blueprint: '"argocdProject"'
         properties:
           createdAt: .metadata.creationTimestamp
           description: .spec.description
-        title: .metadata.name
+- kind: application
   selector:
     query: 'true'
-- kind: application
   port:
     entity:
       mappings:
-        blueprint: '"argocdApplication"'
         identifier: .metadata.uid
+        title: .metadata.name
+        blueprint: '"argocdApplication"'
         properties:
-          annotations: .metadata.annotations
-          createdAt: .metadata.creationTimestamp
-          destinationServer: .spec.destination.server
-          gitPath: .spec.source.path
           gitRepo: .spec.source.repoURL
-          healthStatus: .status.health.status
-          labels: .metadata.labels
+          gitPath: .spec.source.path
+          destinationServer: .spec.destination.server
           revision: .status.sync.revision
-          syncStatus: .status.sync.status
           targetRevision: .spec.source.targetRevision
+          syncStatus: .status.sync.status
+          healthStatus: .status.health.status
+          createdAt: .metadata.creationTimestamp
+          labels: .metadata.labels
+          annotations: .metadata.annotations
+          test: nothing
         relations:
-          cluster:
-            combinator: '"and"'
-            rules: []
+          project: .spec.project
+          namespace: .metadata.namespace
           environment:
             combinator: '"and"'
             rules: []
-          namespace: .metadata.namespace
-          project: .spec.project
-        title: .metadata.name
+          cluster:
+            combinator: '"and"'
+            rules: []
+- kind: application
   selector:
     query: 'true'
-- kind: application
   port:
     mappings:
-      blueprint: '"argocdDeploymentHistory"'
       identifier: .metadata.uid + "-" + (.item.id | tostring)
+      title: .metadata.name + "-" + (.item.id | tostring)
+      blueprint: '"argocdDeploymentHistory"'
       properties:
-        deployStartedAt: .item.deployStartedAt
         deployedAt: .item.deployedAt
+        deployStartedAt: .item.deployStartedAt
+        revision: .item.source.repoURL + "/commit/" + .item.revision
         initiatedBy: .item.initiatedBy.username
         repoURL: .item.source.repoURL
-        revision: .item.source.repoURL + "/commit/" + .item.revision
         sourcePath: .item.source.path
       relations:
         application: .metadata.uid
-      title: .metadata.name + "-" + (.item.id | tostring)
-  selector:
-    query: 'true'
+
 ```
 
 
