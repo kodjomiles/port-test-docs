@@ -452,6 +452,7 @@ resources:
             team: .team.key
             labels: .labelIds
             parentIssue: .parent.identifier
+            childIssues: .children.edges[].node.identifier
             
 ```
 
