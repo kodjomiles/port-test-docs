@@ -420,7 +420,7 @@ resources:
       mappings:
         identifier: .id
         title: .name
-        blueprint: '"pagerdutyService"'
+        blueprint: ''
         properties:
           status: .status
           url: .html_url
@@ -430,18 +430,22 @@ resources:
           meanSecondsToResolve: .__analytics.mean_seconds_to_resolve
           meanSecondsToFirstAck: .__analytics.mean_seconds_to_first_ack
           meanSecondsToEngage: .__analytics.mean_seconds_to_engage
+        relations: {}
 - kind: incidents
   selector:
     query: 'true'
     apiQueryParams:
-      include: []
-      statuses: []
+      include:
+      - assignees
+      - first_trigger_log_entries
+      statuses:
+      - resolved
   port:
     entity:
       mappings:
         identifier: .id | tostring
         title: .title
-        blueprint: '"pagerdutyIncident"'
+        blueprint: ''
         properties:
           status: .status
           url: .html_url
@@ -454,21 +458,28 @@ resources:
           triggered_by: .first_trigger_log_entry.agent.summary
         relations:
           pagerdutyService: .service.id
-          service:
-            combinator: '"and"'
-            rules: []
+          service: '{'
+          combinator: and
+          rules: '['
+          property: pagerdutyServiceId
+          operator: '='
+          value: .service.id
 - kind: incidents
   selector:
     query: 'true'
     apiQueryParams:
-      include: []
-      statuses: []
+      include:
+      - assignees
+      - first_trigger_log_entries
+      statuses:
+      - triggered
+      - acknowledged
   port:
     entity:
       mappings:
         identifier: .id | tostring
         title: .title
-        blueprint: '"pagerdutyIncident"'
+        blueprint: ''
         properties:
           status: .status
           url: .html_url
@@ -479,16 +490,20 @@ resources:
           priority: if .priority != null then .priority.summary else null end
           description: .description
           resolvedAt: .resolved_at
-          recoveryTime: (.created_at as $createdAt | .resolved_at as $resolvedAt |
-            if $resolvedAt == null then null else  ( ($resolvedAt | strptime("%Y-%m-%dT%H:%M:%SZ")
-            | mktime) -\n  ($createdAt | strptime("%Y-%m-%dT%H:%M:%SZ") | mktime)
-            ) / 60 | floor end)
+          recoveryTime: ''
+          ? '''(.created_at as $createdAt | .resolved_at as $resolvedAt | if $resolvedAt
+            == null then null else  ( ($resolvedAt | strptime("%Y-%m-%dT%H'
+          : '%M:%SZ") | mktime) -\n  ($createdAt | strptime("%Y-%m-%dT%H:%M:%SZ")
+            | mktime) ) / 60 | floor end)'
           triggered_by: .first_trigger_log_entry.agent.summary
         relations:
           pagerdutyService: .service.id
-          incident_port_assignee:
-            combinator: '"and"'
-            rules: []
+          incident_port_assignee: '{'
+          combinator: and
+          rules: '['
+          property: pagerduty_user_id
+          operator: in
+          value: .assignments | map(.assignee.id)
           incident_pagerduty_assignee: .assignments | map(.assignee.id)
 - kind: schedules
   selector:
@@ -498,23 +513,25 @@ resources:
       mappings:
         identifier: .id
         title: .name
-        blueprint: '"pagerdutySchedule"'
+        blueprint: ''
         properties:
           url: .html_url
           timezone: .time_zone
           description: .description
           users: '[.users[] | select(has("__email")) | .__email]'
+        relations: {}
 - kind: oncalls
   selector:
     query: 'true'
     apiQueryParams:
-      include: []
+      include:
+      - users
   port:
     entity:
       mappings:
-        identifier: .user.id + "-" + .schedule.id + "-" + .start
+        identifier: '.user.id + '
         title: .user.name
-        blueprint: '"pagerdutyOncall"'
+        blueprint: ''
         properties:
           startDate: .start
           endDate: .end
@@ -523,24 +540,27 @@ resources:
           pagerdutySchedule: .schedule.id
           pagerdutyEscalationPolicy: .escalation_policy.id
           pagerduty_user: .user.id
-          port_user:
-            combinator: '"and"'
-            rules: []
+          port_user: '{'
+          combinator: and
+          rules: '['
+          property: $identifier
+          operator: '='
+          value: .user.email
 - kind: escalation_policies
   selector:
     query: 'true'
-    attachOncallUsers: true
   port:
     entity:
       mappings:
         identifier: .id
         title: .name
-        blueprint: '"pagerdutyEscalationPolicy"'
+        blueprint: ''
         properties:
           url: .html_url
           summary: .summary
           primaryOncall: .__oncall_users | sort_by(.escalation_level) | .[0].user.email
           escalationRules: .escalation_rules
+        relations: {}
 - kind: users
   selector:
     query: 'true'
@@ -549,7 +569,7 @@ resources:
       mappings:
         identifier: .id
         title: .name
-        blueprint: '"pagerdutyUser"'
+        blueprint: ''
         properties:
           url: .html_url
           time_zone: .time_zone
@@ -559,6 +579,52 @@ resources:
           job_title: .job_title
           teams: .teams
           contact_methods: .contact_methods
+        relations: {}
+- kind: incidents
+  selector:
+    query: 'true'
+    apiQueryParams:
+      include:
+      - assignees
+      - first_trigger_log_entries
+      statuses:
+      - resolved
+  port:
+    entity:
+      mappings:
+        identifier: .id | tostring
+        title: ''
+        blueprint: ''
+        properties: {}
+        relations:
+          original_alert: .first_trigger_log_entry.channel.details.id
+          extrakey: if .kind == "Incident" then .children.edges[].node.identifier
+            else null end
+          additionalField: .some.new.field.value
+- kind: incidents
+  selector:
+    query: 'true'
+    apiQueryParams:
+      include:
+      - assignees
+      - first_trigger_log_entries
+      statuses:
+      - triggered
+      - acknowledged
+      inducer:
+      - assignees
+      - first_trigger_log_entries
+  port:
+    entity:
+      mappings:
+        identifier: .id | tostring
+        title: ''
+        blueprint: ''
+        properties: {}
+        relations:
+          original_alert: .first_trigger_log_entry.channel.details.id
+          extrakey: if .kind == "Incident" then .children.edges[].node.identifier
+            else null end
 
 ```
 
