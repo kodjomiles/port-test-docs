@@ -1,0 +1,68 @@
+name: Capture AI Feedback
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  capture-feedback:
+    if: |
+      github.event.issue.pull_request &&
+      startsWith(github.event.comment.body, '/feedback')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Extract feedback text
+        id: extract
+        run: |
+          COMMENT_BODY="${{ github.event.comment.body }}"
+          # Remove the /feedback prefix and trim whitespace
+          FEEDBACK_TEXT=$(echo "$COMMENT_BODY" | sed 's|^/feedback[[:space:]]*||')
+          
+          # Escape special characters for JSON
+          FEEDBACK_TEXT=$(echo "$FEEDBACK_TEXT" | jq -Rs '.')
+          
+          echo "feedback=$FEEDBACK_TEXT" >> $GITHUB_OUTPUT
+          echo "Extracted feedback: $FEEDBACK_TEXT"
+
+      - name: Get Port access token
+        id: port-auth
+        run: |
+          TOKEN=$(curl -s -X POST \
+            -H "Content-Type: application/json" \
+            -d '{"clientId": "${{ secrets.PORT_CLIENT_ID }}", "clientSecret": "${{ secrets.PORT_CLIENT_SECRET }}"}' \
+            https://api.getport.io/v1/auth/access_token | jq -r '.accessToken')
+          echo "token=$TOKEN" >> $GITHUB_OUTPUT
+
+      - name: Send feedback to Port
+        run: |
+          FEEDBACK=${{ steps.extract.outputs.feedback }}
+          
+          curl -X POST \
+            -H "Authorization: Bearer ${{ steps.port-auth.outputs.token }}" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"identifier\": \"feedback-${{ github.event.comment.id }}\",
+              \"title\": \"Feedback from ${{ github.event.comment.user.login }} on PR #${{ github.event.issue.number }}\",
+              \"properties\": {
+                \"raw_feedback\": $FEEDBACK,
+                \"ai_tool\": \"Qodo\",
+                \"feedback_type\": \"PR Review\",
+                \"pr_url\": \"${{ github.event.issue.html_url }}\",
+                \"pr_number\": ${{ github.event.issue.number }},
+                \"author\": \"${{ github.event.comment.user.login }}\",
+                \"submitted_at\": \"${{ github.event.comment.created_at }}\",
+                \"analyzed\": false
+              },
+              \"relations\": {
+                \"repository\": \"${{ github.repository }}\"
+              }
+            }" \
+            "https://api.getport.io/v1/blueprints/aiFeedback/entities?upsert=true"
+
+      - name: Acknowledge feedback
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr comment ${{ github.event.issue.number }} \
+            --repo ${{ github.repository }} \
+            --body "Thanks for your feedback! It has been recorded and will help us evaluate AI tools."
