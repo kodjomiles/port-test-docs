@@ -4,6 +4,10 @@ on:
   issue_comment:
     types: [created]
 
+permissions:
+  pull-requests: write
+  issues: write
+
 jobs:
   capture-feedback:
     if: |
@@ -11,52 +15,46 @@ jobs:
       startsWith(github.event.comment.body, '/feedback')
     runs-on: ubuntu-latest
     steps:
-      - name: Extract feedback text
+      - name: Extract feedback
         id: extract
         run: |
-          COMMENT_BODY="${{ github.event.comment.body }}"
           # Remove the /feedback prefix and trim whitespace
-          FEEDBACK_TEXT=$(echo "$COMMENT_BODY" | sed 's|^/feedback[[:space:]]*||')
-          
-          # Escape special characters for JSON
-          FEEDBACK_TEXT=$(echo "$FEEDBACK_TEXT" | jq -Rs '.')
-          
-          echo "feedback=$FEEDBACK_TEXT" >> $GITHUB_OUTPUT
-          echo "Extracted feedback: $FEEDBACK_TEXT"
+          FEEDBACK=$(echo '${{ github.event.comment.body }}' | sed 's/^\/feedback[[:space:]]*//')
+          echo "feedback=$FEEDBACK" >> $GITHUB_OUTPUT
+          # Also store as JSON-escaped string for the API call
+          echo "feedback_json=$(echo "$FEEDBACK" | jq -Rs .)" >> $GITHUB_OUTPUT
 
-      - name: Get Port access token
+      - name: Get Port token
         id: port-auth
         run: |
-          TOKEN=$(curl -s -X POST \
-            -H "Content-Type: application/json" \
+          TOKEN=$(curl -s -X POST 'https://api.getport.io/v1/auth/access_token' \
+            -H 'Content-Type: application/json' \
             -d '{"clientId": "${{ secrets.PORT_CLIENT_ID }}", "clientSecret": "${{ secrets.PORT_CLIENT_SECRET }}"}' \
-            https://api.getport.io/v1/auth/access_token | jq -r '.accessToken')
+            | jq -r '.accessToken')
           echo "token=$TOKEN" >> $GITHUB_OUTPUT
 
       - name: Send feedback to Port
         run: |
-          FEEDBACK=${{ steps.extract.outputs.feedback }}
-          
           curl -X POST \
             -H "Authorization: Bearer ${{ steps.port-auth.outputs.token }}" \
             -H "Content-Type: application/json" \
-            -d "{
-              \"identifier\": \"feedback-${{ github.event.comment.id }}\",
-              \"title\": \"Feedback from ${{ github.event.comment.user.login }} on PR #${{ github.event.issue.number }}\",
-              \"properties\": {
-                \"raw_feedback\": $FEEDBACK,
-                \"ai_tool\": \"Qodo\",
-                \"feedback_type\": \"PR Review\",
-                \"pr_url\": \"${{ github.event.issue.html_url }}\",
-                \"pr_number\": ${{ github.event.issue.number }},
-                \"author\": \"${{ github.event.comment.user.login }}\",
-                \"submitted_at\": \"${{ github.event.comment.created_at }}\",
-                \"analyzed\": false
+            -d '{
+              "identifier": "feedback-${{ github.event.comment.id }}",
+              "title": "Feedback from ${{ github.event.comment.user.login }} on PR #${{ github.event.issue.number }}",
+              "properties": {
+                "raw_feedback": ${{ steps.extract.outputs.feedback_json }},
+                "ai_tool": "Qodo",
+                "feedback_type": "PR Review",
+                "pr_url": "${{ github.event.issue.html_url }}",
+                "pr_number": ${{ github.event.issue.number }},
+                "author": "${{ github.event.comment.user.login }}",
+                "submitted_at": "${{ github.event.comment.created_at }}",
+                "analyzed": false
               },
-              \"relations\": {
-                \"repository\": \"${{ github.repository }}\"
+              "relations": {
+                "repository": "${{ github.repository }}"
               }
-            }" \
+            }' \
             "https://api.getport.io/v1/blueprints/aiFeedback/entities?upsert=true"
 
       - name: Acknowledge feedback
